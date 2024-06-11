@@ -1,0 +1,55 @@
+pipeline {
+    agent any
+    tools {
+        maven 'localMaven'
+    }
+    stages {
+        stage('Clone CodeBase') {
+            steps {
+                echo 'Clone github repos'
+                git 'https://github.com/olivierGuelton/maven-project.git'
+            }
+        }
+        stage('Compile') {
+            steps {
+                echo 'Compile'
+                withMaven(maven:'localMaven')
+                {
+                    bat "mvn compile"
+                    //sh "mvn compile"
+                }
+            }
+        }
+        stage('Test') {
+            steps {
+                echo 'Test'
+                withMaven(maven:'localMaven')
+                {
+                    bat "mvn test"
+                    //sh "mvn test"
+                }
+            }
+        }
+        stage('Build') {
+            steps {
+                echo 'Build'
+                withMaven(maven:'localMaven')
+                {
+                    bat "mvn -B -DskipTests clean package"
+                    //sh "mvn -B -DskipTests clean package"
+                }
+            }
+        }
+        stage('Analyse and send Results to Sonar') {
+            steps {
+                echo 'Analyse and send Results to Sonar'
+                withSonarQubeEnv(installationName:'localSonar',credentialsId:'token4Sonar')
+                {
+                    bat "mvn -B -DskipTests clean package sonar:sonar"
+                    //sh "mvn -B -DskipTests clean package sonar:sonar"
+                }
+            }
+        }
+        //bat 'mvn -B -DskipTests clean package sonar:sonar -Dsonar.login=admin -Dsonar.password=Admin'
+    }
+}
